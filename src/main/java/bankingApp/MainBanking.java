@@ -83,16 +83,12 @@ public class MainBanking extends HttpServlet{
 	public static String getBankDetails(String pifsccode, String limit, String offset) throws SQLException{
 		String lquery = "";
 		if(!limit.isEmpty() && !offset.isEmpty()){
-			System.out.println("0");
 			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' LIMIT " + limit + " OFFSET " + offset + ";";
 		}else if(!limit.isEmpty()){
-			System.out.println("1");
 			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' LIMIT " + limit + ";";
 		}else if(!offset.isEmpty()){
-			System.out.println("1");
 			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' OFFSET " + offset + ";";
 		}else{
-			System.out.println("2");
 			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "';";
 		}
 
@@ -119,7 +115,7 @@ public class MainBanking extends HttpServlet{
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity  + "' LIMIT " + limit + " OFFSET " + offset + ";";
 		}else if(!limit.isEmpty()){
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "' LIMIT " + limit + ";";
-		}else if(!limit.isEmpty()){
+		}else if(!offset.isEmpty()){
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "' OFFSET " + offset + ";";
 		}else{
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "';";
