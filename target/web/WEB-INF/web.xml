@@ -4,29 +4,11 @@
 
 <web-app>
   <display-name>Archetype Created Web Application</display-name>
-  
- <servlet>
-   	<servlet-name>HelloWorld</servlet-name>
-   	<servlet-class>bankingApp.HelloWorld</servlet-class>
- </servlet>
- <servlet>
-   	<servlet-name>HelloWorld2</servlet-name>
-   	<servlet-class>bankingApp.HelloWorld</servlet-class>
- </servlet>
+
  <servlet>
    	<servlet-name>BankDetails</servlet-name>
    	<servlet-class>bankingApp.MainBanking</servlet-class>
  </servlet>
- 
-
-	<servlet-mapping>
-   		<servlet-name>HelloWorld</servlet-name>
-   		<url-pattern>/Name</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-   		<servlet-name>HelloWorld2</servlet-name>
-   		<url-pattern>/Age</url-pattern>
-	</servlet-mapping>
 	<servlet-mapping>
    		<servlet-name>BankDetails</servlet-name>
    		<url-pattern>/bankdetails</url-pattern>
