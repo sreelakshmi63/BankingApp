@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 
+import org.json.JSONObject;
+
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -27,20 +29,19 @@ public class JwtTokenGenerator extends HttpServlet{
 		 issuer = "SreelakshmiAjith";
 		 subject = "jwt token";
 		 exptime = 432000000;
-		 apiKey = "getjwt";
+		 apiKey = "jwtkey";
 	}
-	
-	
-	
+
 	public void doGet(HttpServletRequest prequest, HttpServletResponse presponse) throws IOException{
 		String queryparams = prequest.getParameter("custid");
 		String lresponse = "";
 		if(!queryparams.isEmpty()){
-			//if(queryparams.equals(custid)){
-				 lresponse = createJWT(queryparams, issuer, subject, exptime);
-			//}
+			lresponse = createJWT(queryparams, issuer, subject, exptime);
+			JSONObject ljsonobj = new JSONObject();
+			ljsonobj.append("token", lresponse);
+			presponse.setContentType("application/json");
 			PrintWriter out = presponse.getWriter();
-			out.println("<h1>" + lresponse + "</h1>");
+			out.println(ljsonobj);
 		}else{
 			presponse.sendError(500);
 		}

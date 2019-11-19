@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -23,31 +24,22 @@ public class MainBanking extends HttpServlet{
 	public String city;
 	
 	
-	/*public static void main(String[] args) throws SQLException{
-		String lresponse = getBankDetails("ALLA0210156", "", "");
-		System.out.println(lresponse);
-	}*/
-	
 	public void doGet(HttpServletRequest prequest, HttpServletResponse presponse) throws IOException{
 		Map<String, String[]> queryparams = prequest.getParameterMap();
-		Object lresponse = null;
+		JSONArray lresponse = null;
 		String limit = "";
 		String offset = "";
 			try {
 				if(queryparams.containsKey("ifsccode")){	
-					for(int i=0; i<queryparams.get("ifsccode").length; i++){
-						lresponse = getBankDetails(queryparams.get("ifsccode")[i]);
-					}	
+					lresponse = getBankDetails(queryparams.get("ifsccode"));
 				}else if(queryparams.containsKey("bankname") && queryparams.containsKey("city")){
-					for(int i=0; i<queryparams.get("bankname").length; i++){
-						if(queryparams.containsKey("limit") ){
-							limit = queryparams.get("limit")[i];
-						}
-						if(queryparams.containsKey("offset")){
-							offset = queryparams.get("offset")[i];
-						}
-						lresponse = getBankDetails(queryparams.get("bankname")[i], queryparams.get("city")[i], limit, offset);
-					}				
+					if(queryparams.containsKey("limit") ){
+						limit = queryparams.get("limit")[0];
+					}
+					if(queryparams.containsKey("offset")){
+						offset = queryparams.get("offset")[0];
+					}
+					lresponse = getBankDetails(queryparams.get("bankname"), queryparams.get("city"), limit, offset);				
 				}else{
 					presponse.sendError(500);
 				}
@@ -61,66 +53,84 @@ public class MainBanking extends HttpServlet{
 		out.println(lresponse);
 	}
 	
-	/*public ArrayList<String> parseQueryParams(String pparams){
-		ArrayList<String> queryparams = new ArrayList<String>();
-		String param ="";
-		for(int i = 0; i < pparams.split("&").length; i++){
-			param = pparams.split("&")[i].split("=")[1];
-			param = param.replace("%20"," ");
-			queryparams.add(param);
-		}
-		return queryparams;
-	}*/
-	
-	public static JSONObject getBankDetails(String pifsccode) throws SQLException{
-		String lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "';";
-		String lresponse = "";
+	public static JSONArray getBankDetails(String[] pifsccode) throws SQLException{
+		//String lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "';";
+		String lquery = createQuery(pifsccode.length, -1);
+		JSONArray ljsonarray = new JSONArray();
 		JSONObject ljsonobj = new JSONObject();
-		ResultSet rs = getDbData(lquery);
+		ResultSet rs = getDbData(lquery, pifsccode, null);
 		ResultSetMetaData rsmd = rs.getMetaData();
 		while(rs.next()) {
-			for(int i = 1; i <= rsmd.getColumnCount(); i++){
-				//lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
+			ljsonobj = new JSONObject();
+			for(int i = 1; i <= rsmd.getColumnCount(); i++){	
 				ljsonobj.append(rsmd.getColumnName(i), rs.getString(i));
 			}	
+			ljsonarray.put(ljsonobj);
 		}
-		if(lresponse.isEmpty()){
-			//lresponse = "NO DATA FOUND";
+		if(ljsonarray.length() == 0){
 			ljsonobj.append("Response", "NO DATA FOUND");
+			ljsonarray.put(ljsonobj);
 		}
 		
-		return ljsonobj;
+		return ljsonarray;
 	}
 	
-	public static JSONArray getBankDetails(String pbankname, String pcity, String limit, String offset) throws SQLException{
-		String lquery = "";
+	
+	
+	public static JSONArray getBankDetails(String[] pbankname, String[] pcity, String limit, String offset) throws SQLException{
+		String lquery = createQuery(pbankname.length, pcity.length);
 		if(!limit.isEmpty() && !offset.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity  + "' LIMIT " + limit + " OFFSET " + offset + ";";
+			lquery += " LIMIT " + limit + " OFFSET " + offset + ";";
 		}else if(!limit.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "' LIMIT " + limit + ";";
+			lquery += " LIMIT " + limit + ";";
 		}else if(!offset.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "' OFFSET " + offset + ";";
-		}else{
-			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "';";
+			lquery += " OFFSET " + offset + ";";
 		}
 		
-	//	String lresponse = "";
 		JSONArray ljsonarray = new JSONArray();
-		ResultSet rs = getDbData(lquery);
+		JSONObject ljsonobj = new JSONObject();
+		ResultSet rs = getDbData(lquery, pbankname, pcity);
 		ResultSetMetaData rsmd = rs.getMetaData();
 		while(rs.next()){
-			JSONObject ljsonobj = new JSONObject();
+			ljsonobj = new JSONObject();
 			for(int i = 1; i <= rsmd.getColumnCount(); i++){
-				//lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
 				ljsonobj.append(rsmd.getColumnName(i), rs.getString(i));
 			}
-			//lresponse += "------------------------------------------------------------<br>";
+			ljsonarray.put(ljsonobj);
+		}
+		if(ljsonarray.length() == 0){
+			ljsonobj.append("Response", "NO DATA FOUND");
 			ljsonarray.put(ljsonobj);
 		}
 		return ljsonarray;
 	}
 	
-	public static ResultSet getDbData(String pquery){ 
+	public static String createQuery(int len1, int len2) { 
+		String query = "";
+		if(len2 == -1){
+			query = "SELECT * FROM bank_details WHERE bank_ifsc in (";
+		}else{
+			query = "SELECT * FROM bank_details WHERE bank_name in (";
+		}
+		
+		StringBuilder queryBuilder = new StringBuilder(query);
+		for( int i = 0; i< len1; i++){
+			queryBuilder.append(" ?");
+			if(i != len1 -1) queryBuilder.append(",");
+		}
+		queryBuilder.append(")");
+		if(len2 != -1){
+			queryBuilder.append(" AND bank_city in (");
+			for( int i = 0; i< len2; i++){
+				queryBuilder.append(" ?");
+				if(i != len2 -1) queryBuilder.append(",");
+			}
+			queryBuilder.append(")");
+		}
+		return queryBuilder.toString();
+	}
+	
+	public static ResultSet getDbData(String pquery, String[] pparam1, String[] pparam2){ 
 		ResultSet rs = null;
 		try {
 			String classname = "org.postgresql.Driver";
@@ -133,10 +143,21 @@ public class MainBanking extends HttpServlet{
 			String password = "root";*/
 			Class.forName(classname);
 			Connection conn = DriverManager.getConnection(connurl, username, password);
-			Statement st = conn.createStatement();
-			System.out.println(pquery);
-			rs = st.executeQuery(pquery);
-			System.out.println(rs.getFetchSize());
+			//Statement st = conn.createStatement();
+			PreparedStatement st = conn.prepareStatement(pquery);
+			if(pparam2 == null){
+				for(int i = 1; i <= pparam1.length; i++){
+					st.setString(i, pparam1[i-1]);
+				}
+			}else{
+				for(int i = 1; i <= pparam1.length; i++){
+					st.setString(i, pparam1[i-1]);
+				}
+				for(int i = 1; i <= pparam2.length; i++){
+					st.setString(i + pparam1.length, pparam2[i-1]);
+				}
+			}
+			rs = st.executeQuery();
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

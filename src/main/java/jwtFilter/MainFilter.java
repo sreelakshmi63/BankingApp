@@ -26,19 +26,23 @@ public class MainFilter implements Filter{
 			throws IOException, ServletException {
 		
 		String header = ((HttpServletRequest) prequest).getHeader("Authorization");
-
+		HttpServletResponse phttpresponse = (HttpServletResponse)presponse;
         if (header == null || !header.startsWith("Bearer ")) {
-           System.out.println("exception test");
-        	HttpServletResponse phttpresponse = (HttpServletResponse)presponse;
-        	phttpresponse.sendError(403);
+        	
+        	phttpresponse.sendError(403, "Invalid Token");
         	return;
         }
 
         String authToken = header.substring(7);
-
-		Claims claims = Jwts.parser()         
-			       .setSigningKey(DatatypeConverter.parseBase64Binary(apiKey))
-			       .parseClaimsJws(authToken).getBody();
+        try{
+        	Claims claims = Jwts.parser()         
+ 			       .setSigningKey(DatatypeConverter.parseBase64Binary(apiKey))
+ 			       .parseClaimsJws(authToken).getBody();
+        }catch(Exception e){
+        	phttpresponse.sendError(403, "Invalid Token");
+        	return;
+        }
+		
 		chain.doFilter(prequest, presponse);
 	}
 
