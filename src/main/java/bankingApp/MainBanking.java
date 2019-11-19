@@ -14,37 +14,29 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class MainBanking extends HttpServlet{
 	public String ifsccode;
 	public String bankname;
 	public String city;
 	
-	public void init(){
-		ifsccode = "";
-		bankname = "";
-		city = "";
-	}
 	
-	public static void main(String[] args) throws SQLException{
+	/*public static void main(String[] args) throws SQLException{
 		String lresponse = getBankDetails("ALLA0210156", "", "");
 		System.out.println(lresponse);
-	}
+	}*/
 	
 	public void doGet(HttpServletRequest prequest, HttpServletResponse presponse) throws IOException{
 		Map<String, String[]> queryparams = prequest.getParameterMap();
-		String lresponse = "";
+		Object lresponse = null;
 		String limit = "";
 		String offset = "";
 			try {
 				if(queryparams.containsKey("ifsccode")){	
 					for(int i=0; i<queryparams.get("ifsccode").length; i++){
-						if(queryparams.containsKey("limit") ){
-							limit = queryparams.get("limit")[i];
-						}
-						if(queryparams.containsKey("offset")){
-							offset = queryparams.get("offset")[i];
-						}
-						lresponse += getBankDetails(queryparams.get("ifsccode")[i], limit, offset);
+						lresponse = getBankDetails(queryparams.get("ifsccode")[i]);
 					}	
 				}else if(queryparams.containsKey("bankname") && queryparams.containsKey("city")){
 					for(int i=0; i<queryparams.get("bankname").length; i++){
@@ -54,7 +46,7 @@ public class MainBanking extends HttpServlet{
 						if(queryparams.containsKey("offset")){
 							offset = queryparams.get("offset")[i];
 						}
-						lresponse += getBankDetails(queryparams.get("bankname")[i], queryparams.get("city")[i], limit, offset);
+						lresponse = getBankDetails(queryparams.get("bankname")[i], queryparams.get("city")[i], limit, offset);
 					}				
 				}else{
 					presponse.sendError(500);
@@ -64,9 +56,9 @@ public class MainBanking extends HttpServlet{
 				e.printStackTrace();
 			}
 		
-		presponse.setContentType("text/html");
+		presponse.setContentType("application/json");
 		PrintWriter out = presponse.getWriter();
-		out.println("<h1>" + lresponse + "</h1>");
+		out.println(lresponse);
 	}
 	
 	/*public ArrayList<String> parseQueryParams(String pparams){
@@ -80,36 +72,27 @@ public class MainBanking extends HttpServlet{
 		return queryparams;
 	}*/
 	
-	public static String getBankDetails(String pifsccode, String limit, String offset) throws SQLException{
-		String lquery = "";
-		if(!limit.isEmpty() && !offset.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' LIMIT " + limit + " OFFSET " + offset + ";";
-		}else if(!limit.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' LIMIT " + limit + ";";
-		}else if(!offset.isEmpty()){
-			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "' OFFSET " + offset + ";";
-		}else{
-			lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "';";
-		}
-
+	public static JSONObject getBankDetails(String pifsccode) throws SQLException{
+		String lquery = "SELECT * FROM bank_details WHERE bank_ifsc = '" + pifsccode + "';";
 		String lresponse = "";
+		JSONObject ljsonobj = new JSONObject();
 		ResultSet rs = getDbData(lquery);
 		ResultSetMetaData rsmd = rs.getMetaData();
 		while(rs.next()) {
 			for(int i = 1; i <= rsmd.getColumnCount(); i++){
-				lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
+				//lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
+				ljsonobj.append(rsmd.getColumnName(i), rs.getString(i));
 			}	
 		}
 		if(lresponse.isEmpty()){
-			lresponse = "NO DATA FOUND";
-		}else{
-			lresponse += "------------------------------------------------------------<br>";
+			//lresponse = "NO DATA FOUND";
+			ljsonobj.append("Response", "NO DATA FOUND");
 		}
 		
-		return lresponse;
+		return ljsonobj;
 	}
 	
-	public static String getBankDetails(String pbankname, String pcity, String limit, String offset) throws SQLException{
+	public static JSONArray getBankDetails(String pbankname, String pcity, String limit, String offset) throws SQLException{
 		String lquery = "";
 		if(!limit.isEmpty() && !offset.isEmpty()){
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity  + "' LIMIT " + limit + " OFFSET " + offset + ";";
@@ -121,16 +104,20 @@ public class MainBanking extends HttpServlet{
 			lquery = "SELECT * FROM bank_details WHERE bank_name= '" + pbankname + "' AND bank_city = '" + pcity + "';";
 		}
 		
-		String lresponse = "";
+	//	String lresponse = "";
+		JSONArray ljsonarray = new JSONArray();
 		ResultSet rs = getDbData(lquery);
 		ResultSetMetaData rsmd = rs.getMetaData();
 		while(rs.next()){
+			JSONObject ljsonobj = new JSONObject();
 			for(int i = 1; i <= rsmd.getColumnCount(); i++){
-				lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
+				//lresponse += rsmd.getColumnName(i) + ": " + rs.getString(i) + "<br>";
+				ljsonobj.append(rsmd.getColumnName(i), rs.getString(i));
 			}
-			lresponse += "------------------------------------------------------------<br>";
+			//lresponse += "------------------------------------------------------------<br>";
+			ljsonarray.put(ljsonobj);
 		}
-		return lresponse;
+		return ljsonarray;
 	}
 	
 	public static ResultSet getDbData(String pquery){ 
