@@ -19,7 +19,7 @@ public class MainFilter implements Filter{
 	String apiKey = "";
 	public void init(FilterConfig filterConfig) throws ServletException {
 		// TODO Auto-generated method stub
-		apiKey = "jwtkey";
+		apiKey = "jwtkey	";
 	}
 	
 	public void doFilter(ServletRequest prequest, ServletResponse presponse, FilterChain chain)
