@@ -37,11 +37,11 @@ public class JwtTokenGenerator extends HttpServlet{
 		String lresponse = "";
 		if(!queryparams.isEmpty()){
 			lresponse = createJWT(queryparams, issuer, subject, exptime);
-			JSONObject ljsonobj = new JSONObject();
-			ljsonobj.append("token", lresponse);
-			presponse.setContentType("application/json");
+			//JSONObject ljsonobj = new JSONObject();
+			//ljsonobj.append("token", lresponse);
+			//presponse.setContentType("application/json");
 			PrintWriter out = presponse.getWriter();
-			out.println(ljsonobj);
+			out.println(lresponse);
 		}else{
 			presponse.sendError(500);
 		}

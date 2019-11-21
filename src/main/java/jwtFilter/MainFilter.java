@@ -24,11 +24,9 @@ public class MainFilter implements Filter{
 	
 	public void doFilter(ServletRequest prequest, ServletResponse presponse, FilterChain chain)
 			throws IOException, ServletException {
-		
 		String header = ((HttpServletRequest) prequest).getHeader("Authorization");
 		HttpServletResponse phttpresponse = (HttpServletResponse)presponse;
         if (header == null || !header.startsWith("Bearer ")) {
-        	
         	phttpresponse.sendError(403, "Invalid Token");
         	return;
         }
